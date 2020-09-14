@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.text.TextUtils;
 
+import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -15,7 +16,7 @@ public class MyRouter {
     private Map<String, String> stringParams = new HashMap<>();
     private Map<String, Integer> intParams = new HashMap<>();
     private Map<String, Boolean> booleanParams = new HashMap<>();
-    private Context context;
+    private WeakReference<Context> contextWeakRef;
 
     public static MyRouter getInstance() {
         if (instance == null) {
@@ -29,9 +30,8 @@ public class MyRouter {
     }
 
     public void init(Application application) {
-        this.context = application;
-
-        Set<String> fileNames = ClassUtil.getFileNameByPackageName(context, "com.leather.aptdemo");
+        contextWeakRef = new WeakReference<>(application);
+        Set<String> fileNames = ClassUtil.getFileNameByPackageName(application, "com.leather");
         for (String name : fileNames) {
             Class<?> clazz;
             try {
@@ -77,7 +77,8 @@ public class MyRouter {
 
     public void navigation(String path) {
         Class<?> aClass = routerMap.get(path);
-        if (aClass != null) {
+        Context context = contextWeakRef.get();
+        if (aClass != null && context != null) {
             Intent intent = new Intent(context, aClass);
             if (!stringParams.isEmpty()) {
                 for (String key : stringParams.keySet()) {
